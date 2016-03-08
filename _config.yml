@@ -12,8 +12,9 @@ timezone:
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
+
 url: http://zuoyanart.github.io/
-root: /blog/
+root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 
@@ -69,8 +70,9 @@ theme: next
 ## Docs: http://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repo: https://github.com/zuoyanart/blog.git  #改成你的项目地址
-  branch: gh-pages
+  repo: https://github.com/zuoyanart/zuoyanart.github.io.git  #改成你的项目地址
+  branch: master
+
 # Social links
 social:
   github: https://github.com/spnt
