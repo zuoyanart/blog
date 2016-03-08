@@ -1,0 +1,2 @@
+@ECHO ON
+hexo d
