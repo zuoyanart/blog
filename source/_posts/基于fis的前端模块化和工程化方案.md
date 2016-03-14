@@ -4,55 +4,75 @@ tags: [fis,前端,前端工程化,前端模块化]
 ---
 
 
+
 ## 前端构建工具
-面对日益复杂的前端环境以及前端技术、node技术的高速发展，前端的开发也越来越工程化，体系化，也就是出现了前端自动化构建工具。他们完成的任务目标基本是：
+面对日益复杂的前端环境以及前端技术、node技术的高速发展，前端的开发也越来越工程化，体系化，也就出现了前端自动化构建维护工具。他们完成的任务目标基本是：
 
 > * js，css,图片的自动压缩合并（图片也即是是自动sprite）
-> * js，css,图片自动添加域名
-> * js，css,图片自动添加md5或版本号
-> * 自动监听文件变化
-> * sass/less/coffee等的自动编译
-> * 支持amd/cmd的模块开发，可自动文件依赖
-> * 可以部署文件
-> * 网页自动刷新
-> * 实时编译
+> * js，css,图片自动添加域名（静态文件的分布式部署）
+> * js，css,图片自动添加md5或版本号（缓存管理）
+> * 自动监听文件变化 （自动编译，方便调试）
+> * sass/less/coffee等的自动编译 （方便扩展各种插件）
+> * 支持amd/cmd的模块开发，可自动文件依赖 （js模块化开发）
+> * 可以部署文件 （自动部署）
+> * 网页自动刷新 （方便调试）
+> * 实时编译 （方便调试）
 
-成熟的前端构建工具也有很多，比如：Gulp.js，Grunt，webpark, fis等等，其他构建工具本人使用不多，本文主要是对fis的前端工程化和模块化的使用做详细介绍
+成熟的前端构建工具也有很多，比如：Gulp.js，Grunt，webpark等等，其他构建工具本人使用不多，本文主要是对fis的前端工程化和模块化的使用做详细介绍
 
 
 ## 关于fis
 fis是百度研发的一套前端构建工具，拥有丰富的脚手架和组件仓库。因为fis是本人接触的最早的前端构建工具，所以一直沿用到了至今。
 
-		注： 本文是针对fis2，基于fis3的配置和插件将在稍后给出
+		注： 本文针对的版本号是fis3
 
 ## fis的前端工程化和模块化基础插件
 ### 1.自动打包合并插件
 #### fis配置
 ```js
-//开始autoCombine可以将零散资源进行自动打包
-fis.config.set('settings.postpackager.simple.autoCombine', true);
-//开启autoReflow使得在关闭autoCombine的情况下，依然会优化脚本与样式资源引用位置
-fis.config.set('settings.postpackager.simple.autoReflow', true);
-fis.config.set('settings.postpackager.simple.output', 'pkg/mcren_${hash}');
+
+//打包与css sprite基础配置
+fis.match('::packager', {
+    // npm install -g fis3-postpackager-loader
+    postpackager: fis.plugin('loader', {
+        resourceType: 'mod',
+        obtainScript: true,
+        allInOne: true,
+        useInlineMap: true, // 资源映射表内嵌
+    }),
+    packager: fis.plugin('map', {//常用脚本和css的合并，此不参与到页面的自动合并
+      useTrack: false,
+      'pkg/base.js': ['/modules/jquery/*.js', '/modules/layer/*.js', '/modules/pizzalayer/*.js', '/modules/pizzatools/*.js'],
+      'pkg/base-a.js': ['/widget/globle/*.js', '/modules/pizzaui/pizza.ui.js', '/site/common/common.js'],
+      'pkg/base.css': ['/css/pizza.css', '/css/iconfont.css']
+    }),
+    spriter: fis.plugin('csssprites', {//css的雪碧合并配置
+        layout: 'matrix',
+        margin: '15'
+    })
+});
+
 ```
 #### 作用
 将html中分散的静态资源进行自动合并打包
 #### 应用举例：
 原始文件
 ```js
-  <link rel="stylesheet" type="text/css" href="/css/mcren.css">
+  <link rel="stylesheet" type="text/css" href="/css/pizza.css">
+  <link rel="stylesheet" type="text/css" href="/css/iconfont.css">
   <link rel="stylesheet" type="text/css" href="/site/index/index/index.css">
 ```
 转换后
 ```js
-   <link type="text/css" rel="stylesheet" href="/pkg/mcren_7636e.css">
+   <link type="text/css" rel="stylesheet" href="/pkg/base.css">
+   <link rel="stylesheet" href="/pkg/view/home/article_index.html_aio.css" />
 ```
 可以看到fis会自动合并多个css到同一个文件里，这个合并不仅仅适用于css，也同样适用与js，并且将自动把css文件放入header头，js放在body结束前，有了这个功能也就具备的模块化开发的大前提
 ### fis的include功能
 #### fis配置
 默认支持，无须插件
 #### 作用
-大家在使用模板的时候，肯定是少不了include功能的， 即公共部分的文件引用。fis同样支持这个功能，而且借助与自动打包功能，include功能的作用也被放大的很多.(fis支持多级include)
+大家在使用模板引擎的时候，肯定是少不了include功能的， 即公共部分的文件引用。fis同样支持这个功能，而且借助与自动打包功能，include功能的作用也被放大的很多.(fis支持多级include)
 #### 应用举例
 ##### 主模板文件
 ```js
@@ -72,7 +92,7 @@ fis.config.set('settings.postpackager.simple.output', 'pkg/mcren_${hash}');
 ```
 ##### 次模版文件（header-small/header.html）
 ```js
-<link rel="stylesheet" type="text/css" href="header.css">
+<link rel="stylesheet" type="text/css" href="./header.css">
 <div class="header">
 	<div>
 		<link rel="import" href="../loginstate/loginstate.html?__inline"><h1><a href="/">主页</a></h1>
@@ -120,25 +140,15 @@ fis.config.set('settings.postpackager.simple.output', 'pkg/mcren_${hash}');
 
 > 另外大家可以看到我模块的划分，header模块的html是引入css的，也就是说模块与模块之间以及模块和主体页面之间的css都是独立的，这样充分解耦，可以有效的解决css的维护问题，
 
-
-### 图片雪碧
-#### fis配置
-```js
-fis.config.set('modules.spriter', 'csssprites');
-```
-#### 作用
-自动把css中的图片转换成雪碧图
-#### 应用举例
-不写了，大家都懂的
-
-
 ### ejs分析能力
 #### fis配置
 ```js
-//tell fis that `.ejs` is a js file 
-fis.config.set('roadmap.ext.ejs', 'js');
-//tell fis that parse `.ejs` file by using `fis-parser-ejs` plugin 
-fis.config.set('modules.parser.ejs', 'ejs');
+//npm install fis-parser-ejs
+fis.match("**/*.ejs", {
+        parser: fis.plugin('ejs'),
+        isJsLike: true,
+        release: false
+    })
 ```
 #### 作用
 大家知道，写js打印html字符串到页面的时候，如果在js里面串接html字符串是一种很难受的体验，所以fis也就有了这个插件，这个插件可以给js方法添加引用ejs模板的能力，这里ejs的使用方法和原生的完全兼容
@@ -160,6 +170,187 @@ function ejsEx() {
 #### 输出
 ```js
 <h1>我的ejs模板</h1>
+```
+### 母版页支持
+#### fis配置
+```js
+//npm install fis-parser-ejs
+//page下面的页面发布时去掉page文件夹
+//这里其实是使用了swig的母版页功能，然后通过fis编译成html页面的
+fis.match(/^\/view\/(.*)$/i, {
+        parser: fis.plugin('swigt'),
+        useCache: false,
+        release: '/$&'
+    })
+```
+#### 作用
+母版页的使用场景在后台管理页面里特别常见，在后台里总是头尾和左侧管理菜单栏是不变的，其他位置在变化，如果有母版页功能支持，那么开发这些页面就变得轻而易举
+#### 应用举例
+##### html母板
+```js
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="import" href="/widget/meta/meta.html?__inline">
+    <link rel="stylesheet" href="/site/common/common.css">
+    <link rel="stylesheet" href="/site/home/base.css" >
+    {% block css %}{% endblock %}
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+	<div id="header">
+		<h1><i class="icon-pizza"></i>Pizza Admin</h1>
+	</div>
+	<div id="user-nav">
+		<ul>
+			<li><i class="icon-person"></i><span id="userinfo"></span></li>
+			<li><a href="javascript:void(0);" id="loginout"><i class="icon-loginout"></i>退出</a></li>
+		</ul>
+	</div>
+	<div id="search">
+		<input type="search" id="searchkw">
+	</div>
+	<div id="sidebar">
+		<ul>
+			<li><a href="/" class=""><i class="icon-home"></i>主页</a></li>
+			<li>
+				<a href="#" class="submenu"><i class="icon-article"></i>信息管理</a>
+				<ul>
+					<li><a href="/tree">节点管理</a></li>
+					<li><a href="/article">文章管理</a></li>
+					<li><a href="/module">模块管理</a></li>
+				</ul>
+			</li>
+			<li>
+        <a href="#" class="submenu"><i class="icon-setting"></i>系统管理</a>
+        <ul>
+					<li><a href="/user">管理员管理</a></li>
+					<!-- <li><a href="/article">系统设置</a></li>
+					<li><a href="/module"></a></li> -->
+				</ul>
+      </li>
+		</ul>
+	</div>
+	<div id="main">
+		{% block content %}{%endblock%}
+	</div>
+	<div class="row-fluid"></div>
+	<script type="text/javascript">
+  var globleConfig = require('globle/globle');
+  globleConfig.init();
+	var common = require('common/common');
+	common.init();
+	</script>
+    {% block js %}{%endblock%}
+</body>
+
+</html>
+
+```
+##### html模板
+```js
+{% extends "../master/index.html" %} {% block css%} {% endblock %} {% block title %} 文章管理 {% endblock %}
+<!---->
+{% block content %}
+<div class="menu">
+  <label class="checkgroup">
+    <input type="checkbox" id="checkall" name="checkall"><label for="checkall" class="check-all"></label>全选
+  </label>|<a href="/home/user/edit">添加</a>|<em class="pass">冻结</em>|<em class="remove">删除</em>
+</div>
+<ul class="list" id="list">
+</ul>
+{% endblock %}
+<!---->
+{% block js %}
+<script type="text/javascript">
+  var user = require('home/user/user');
+  user.init();
+</script>
+{% endblock %}
+
+```
+#### 生成
+```js
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">     
+    <title> 文章管理 </title>
+
+    <link rel="stylesheet" media="screen" charset="utf-8" href="/static/pkg/base.css" />
+    <link rel="stylesheet" href="/static/pkg/view/home/user_index.html_aio.css" />
+</head>
+<body>
+	<div id="header">
+		<h1><i class="icon-pizza"></i>Pizza Admin</h1>
+	</div>
+	<div id="user-nav">
+		<ul>
+			<li><i class="icon-person"></i><span id="userinfo"></span></li>
+			<li><a href="javascript:void(0);" id="loginout"><i class="icon-loginout"></i>退出</a></li>
+		</ul>
+	</div>
+	<div id="search">
+		<input type="search" id="searchkw">
+	</div>
+	<div id="sidebar">
+		<ul>
+			<li><a href="/" class=""><i class="icon-home"></i>主页</a></li>
+			<li>
+				<a href="#" class="submenu"><i class="icon-article"></i>信息管理</a>
+				<ul>
+					<li><a href="/tree">节点管理</a></li>
+					<li><a href="/article">文章管理</a></li>
+					<li><a href="/module">模块管理</a></li>
+				</ul>
+			</li>
+			<li>
+        <a href="#" class="submenu"><i class="icon-setting"></i>系统管理</a>
+        <ul>
+					<li><a href="/user">管理员管理</a></li>
+					<!-- <li><a href="/article">系统设置</a></li>
+					<li><a href="/module"></a></li> -->
+				</ul>
+      </li>
+		</ul>
+	</div>
+	<div id="main">
+		
+<div class="menu">
+  <label class="checkgroup">
+    <input type="checkbox" id="checkall" name="checkall"><label for="checkall" class="check-all"></label>全选
+  </label>|<a href="/home/user/edit">添加</a>|<em class="pass">冻结</em>|<em class="remove">删除</em>
+</div>
+<ul class="list" id="list">
+</ul>
+
+	</div>
+	<div class="row-fluid"></div>
+
+<script charset="utf-8" src="/static/lib/mod.js"></script>
+<script type="text/javascript" src="/static/pkg/base.js"></script>
+<script type="text/javascript" src="/static/pkg/base-a.js"></script>
+<script type="text/javascript" src="/static/site/home/user/user.js"></script>
+<script type="text/javascript">
+  var globleConfig = require('globle/globle');
+  globleConfig.init();
+	var common = require('common/common');
+	common.init();
+	
+
+  var user = require('home/user/user');
+  user.init();
+</script>
+<script type="text/javascript" charset="utf-8" src="http://192.168.1.134:8132/livereload.js"></script></body>
+
+</html>
+
 ```
 ## 目录结构
 上面已经介绍了fis的模块化基础能力，现在开始实践fis的模块化开发能力。当然fis的amd/cmd，域名添加等等基础功能，这里没有叙述，您可以自行上官网查看学习
@@ -188,7 +379,7 @@ function ejsEx() {
 
 >> fis-conf.js //fis配置文件
 
-因为我的技术构架是： 前端 + nodejs + api，所以使用这种目录结构，用户可根据自己的项目目录自由更改。
+因为我的技术构架是： 前端 + nodejs + rest api，所以使用这种目录结构，用户可根据自己的项目目录自由更改。
 
 ### 说明
 #### modules目录
@@ -291,187 +482,99 @@ module.exports = loginState;
 
 
 ## 所需插件
-* fis-postprocessor-require-async
+* fis3-postpackager-loader
 * fis-parser-ejs
-* fis-postpackager-autoload
-* fis-postpackager-simple
+* fis-parser-swigt
 
 ```js
-npm install 以上插件即可
+npm install -g 以上插件即可
 ```
 
 ## fis-conf.js
-结合我的项目，本人的配置文件如下。下载本配置文件并且安装好fis后，可以直接使用。（由于项目发展时间很长，配置文件已经显得啰嗦，如果大拿研究了fis，可自行优化自己的配置文件）
+结合我的项目，本人的配置文件如下。下载本配置文件并且安装好fis后，可以直接使用。
+
 ```js
-fis.config.set('livereload.port', 8136);
-//use css sprites
-fis.config.set('modules.spriter', 'csssprites');
-//tell fis that `.ejs` is a js file 
-fis.config.set('roadmap.ext.ejs', 'js');
-//tell fis that parse `.ejs` file by using `fis-parser-ejs` plugin 
-fis.config.set('modules.parser.ejs', 'ejs');
-//set options if you need 
-//@see https://github.com/visionmedia/ejs#options 
-fis.config.set('settings.parser.ejs', {
-    open: '<%',
-    close: '%>'
-});
-//使用simple插件，自动应用pack的资源引用
-fis.config.set('modules.postpackager', 'simple');
-//开始autoCombine可以将零散资源进行自动打包
-fis.config.set('settings.postpackager.simple.autoCombine', true);
-//开启autoReflow使得在关闭autoCombine的情况下，依然会优化脚本与样式资源引用位置
-fis.config.set('settings.postpackager.simple.autoReflow', true);
-fis.config.set('settings.postpackager.simple.output', 'pkg/mcren_${hash}');
+//由于使用了bower，有很多非必须资源。通过set project.files对象指定需要编译的文件夹和引用的资源
+// fis.set('project.files', ['page/**', 'map.json', 'modules/**', 'lib']);
+fis.set('project.ignore', ['*.bat', '*.rar', 'node_modules/**', 'fis-conf.js', "package.json"]);
 
-fis.config.merge({
-    pack: {
-        'pkg/base.js': ['/modules/jquery/*.js', '/modules/layer/*.js', '/modules/pizzalayer/*.js', '/modules/pizzatools/*.js'],
-        'pkg/kindeditor.js': ['/widget/kindeditor/kindeditor-min.js']
-    }
+fis.set('statics', '/www/static'); //static目录
+fis.set('url', '/static');
+
+//FIS modjs模块化方案，您也可以选择amd/commonjs等
+fis.hook('commonjs', {
+    mod: 'amd'
 });
 
-fis.config.merge({
-    statics: '/public',
-    modules: {
-        postprocessor: {
-            js: "jswrapper, require-async",
-            html: "require-async"
-        },
-        postpackager: ['autoload', 'simple'],
-        lint: {
-            js: 'jshint'
-        }
-    },
-    roadmap: {
-        ext: {
+/*************************目录规范*****************************/
+fis.match("**/*", {
+        release: '${statics}/$&'
+    })
+    .match("**/*.ejs", {
+        parser: fis.plugin('ejs'),
+        isJsLike: true,
+        release: false
+    })
+    //modules下面都是模块化资源
+    .match(/^\/modules\/([^\/]+)\/(.*)\.(js)$/i, {
+        isMod: true,
+        id: '$1', //id支持简写，去掉modules和.js后缀中间的部分
+        release: '${statics}/$&',
+        url: '${url}/$&',
+        //optimizer: fis.plugin('uglify-js')
+    })
+    //page下面的页面发布时去掉page文件夹
+    .match(/^\/view\/(.*)$/i, {
+        parser: fis.plugin('swigt'),
+        useCache: false,
+        release: '/$&'
+    })
+    .match(/^\/(widget|site)\/(.*)\.(js)$/i, {
+      isMod:true,
+      id: '$2',
+       url: '${url}/$&'
+    })
+    .match(/^\/widget\/kindeditor-4.1.10\/(.*)\.(js)$/i, {
+      isMod:false,
+       url: '${url}/$&'
+    })
+    //less的mixin文件无需发布
+    .match(/^(.*)mixin\.less$/i, {
+        release: false
+    })
+    //前端模板,当做类js文件处理，可以识别__inline, __uri等资源定位标识
+    .match("**/*.tmpl", {
+        isJsLike: true,
+        release: false
+    }).match("**/*", {
+        url: '/static$&'
+    })
+    //页面模板不用编译缓存
+    .match(/.*\.(html|jsp|tpl|vm|htm|asp|aspx|php)$/, {
+        useCache: false
+    });
 
-        },
-        path: [{
-            reg: /^\/modules\/laydate\/(need|skins)\/.*\.(js|css|png|gif)$/i,
-            useHash: false,
-            isMod: false,
-            release: '${statics}/$&',
-            url: '$&'
 
-        }, {
-            reg: /^\/widget\/kindeditor\/(lang|plugins|themes)\/.*\.(js|css|png|gif)$/i,
-            useHash: false,
-            isMod: false,
-            release: '${statics}/$&',
-            url: '$&'
 
-        }, {
-            reg: /^\/lib\/(.*)\.(js)$/i,
-            isMod: false,
-            release: '${statics}/$&',
-            url: '/lib/$1'
-        }, {
-            reg: /^\/font\/(.*)$/i,
-            isMod: false,
-            release: '${statics}/$&',
-            url: '/font/$1'
-        }, {
-            reg: /^\/views\/(.*)$/i,
-            useCache: false,
-            release: '/views/$1'
-        }, {
-            //一级同名组件，可以引用短路径，比如modules/jquery/juqery.js
-            //直接引用为var $ = require('jquery');
-            reg: /^\/modules\/([^\/]+)\/(.*)\.(js)$/i,
-            //是组件化的，会被jswrapper包装
-            isMod: true,
-            //id为文件夹名
-            id: '$1',
-            release: '${statics}/$&',
-            url: '$0'
-        }, {
-            //组件化的webpart的js
-            reg: /^\/(widget|site)\/(.*)\.(js)$/i,
-            isMod: true,
-            id: '$2',
-            release: '${statics}/$&',
-            url: '$&'
-        }, {
-            //modules目录下的其他脚本文件
-            reg: /^\/modules\/(.*)\.(js)$/i,
-            //是组件化的，会被jswrapper包装
-            isMod: true,
-            //id是去掉modules和.js后缀中间的部分
-            id: '$1',
-            release: '${statics}/$&',
-            url: '/modules/$1'
-        }, {
-            //组件化的webpart的html
-            reg: /^\/widget\/(.*)\.(html)/i,
-            release: false
-        }, {
-            //组件化的webpart的css
-            reg: /^\/(widget|site)\/(.*)\.(css|png|jpg)/i,
-            release: '${statics}/$&',
-            useSprite: true,
-            url: '$&'
-        }, {
-            //其他css文件
-            reg: /^(.*)\.(css|less)$/i,
-            release: '${statics}/$&',
-            url: '$&'
-        }, {
-            //前端模板
-            reg: '**.ejs',
-            //当做类js文件处理，可以识别__inline, __uri等资源定位标识
-            isJsLike: true,
-            //只是内嵌，不用发布
-            release: false
-        }, {
-            reg: "map.js",
-            release: "${statics}/"
-        }, {
-            reg: /.*\.(html|jsp|tpl|vm|htm|asp|aspx|php)$/,
-            useCache: false,
-            release: '${statics}/$&'
-        }, {
-            reg: "**",
-            release: '${statics}/$&',
-            url: '$&'
-        }]
-    },
-    settings: {
-        postprocessor: {
-            jswrapper: {
-                type: 'amd'
-            }
-        },
-        lint: {
-            jshint: {
-                camelcase: true,
-                curly: true,
-                eqeqeq: true,
-                forin: true,
-                immed: true,
-                latedef: true,
-                newcap: true,
-                noarg: true,
-                noempty: true,
-                node: true
-            }
-        }
-    }
+//打包与css sprite基础配置
+fis.match('::packager', {
+    // npm install [-g] fis3-postpackager-loader
+    postpackager: fis.plugin('loader', {
+        resourceType: 'mod',
+        obtainScript: true,
+        allInOne: true,
+        useInlineMap: true, // 资源映射表内嵌
+    }),
+    packager: fis.plugin('map', {
+      useTrack: false,
+      'pkg/base.js': ['/modules/jquery/*.js', '/modules/layer/*.js', '/modules/pizzalayer/*.js', '/modules/pizzatools/*.js'],
+      'pkg/base-a.js': ['/widget/globle/*.js', '/modules/pizzaui/pizza.ui.js', '/site/common/common.js'],
+      'pkg/base.css': ['/css/pizza.css', '/css/iconfont.css']
+    }),
+    spriter: fis.plugin('csssprites', {
+        layout: 'matrix',
+        margin: '15'
+    })
 });
-
-fis.config.merge({
-    roadmap: {
-        //所有静态资源文件都使用 http://s1.example.com 或者 http://s2.example.com 作为域名
-        domain: 'http://static1.example.com, http://s2.example.com'
-    }
-});
-
-
-fis.config.merge({
-    project: {
-        exclude: /.docx|.bak$|.bat$|.md$|.rar$$|^\/less\/*|.less$|^\/modules\/pizzaui\/pizzaui\/*/i
-    } //排除压缩包，文档，和bak文件
-});
-
 
 ```
