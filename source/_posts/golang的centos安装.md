@@ -4,7 +4,7 @@ tags: [golang, centos]
 ---
 
 
-## Lunux下安装(基于centos)
+## Linux下安装(基于centos)
 ## 下载golang
 根据自己的系统位数（32位/64位）下载适合自己的版本的golang安装包
 
@@ -25,11 +25,12 @@ vi /etc/profile
 ```js
 export GOROOT=/data/soft/golang/go   //安装位置
 export GOPATH=/data/host/go //自定义代码位置
-export GOBIN=$GOPATH/bin
+export GOBIN=$GOROOT/bin
 export GOPKG=$GOPATH/pkg/linux_amd64
 export GOARCH=amd64
 export GOOS=linux
-export PATH=$PATH:$GO_INSTALL_DIR/go/bin
+export PATH=$PATH:$GOBIN:$GOPKG:$GOPATH/bin
+
 ```
 然后编译生效
 ```js
