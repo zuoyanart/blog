@@ -565,9 +565,73 @@ describe('Github', function() {
 });
 ```
 ## 处理页面对象
+### 使用页面对象
+页面对象的方法是通过包装一个Web应用程序的页面或页面片段转换为对象的一个流行的端到端的测试模式。页面对象的目的是让软件客户端做任何事情，看到任何一个人可以被抽象掉访问和操作的页面所需的底层的HTML动作。
+
+一个全面的页面对象介绍可以看这里： [pages objects][3]
+
+        As of version 0.7 Nightwatch provides an enhanced and more powerful interface for creating page objects, significantly improved over the previous support. Page objects created prior to v0.7 will still continue to work however we recommend upgrading to the new version. To use the new version, your page object must contain either the elements or sections property. Otherwise, Nightwatch will defer to the old.
+
+ * 配置页面对象（Page Objects）
+ 要创建一个页面对象简单地创建具有描述页面属性的对象。每个页面对象应设在一个单独的文件，位于一个指定的文件夹。 Nightwatch读取文件夹（或文件夹）在`page_objects_path`配置属性指定的页面对象。
+
+`page_objects_path`属性同样可以是一个文件夹的数组，允许你在更小的分组中合乎逻辑的分割对象。
+
+* Url 属性
+你可以随意的添加`url`属性用来指定页面的url地址， 访问到页面之后，你可以在这个页面对象中调用原生的方法。
+URL通常定义为一个字符串：
+```js
+module.exports = {
+  url: 'http://google.com',
+  elements: {}
+};
+```
+他也可以通过一个function被动态的定义，一个例子就是支持不同的测试地址，因此允许这样做：
+```js
+module.exports = {
+  url: function() { 
+    return this.api.launchUrl + '/login'; 
+  },
+  elements: {}
+};
+```
+### 定义dom 元素
+大多数时候， 你会定义`elements`在你的页面上然后在测试页面通过命令或者断言。
+这样使你的所有元素都在一个地方定义的元素属性变得简单。特别是在大型集成测试，使用`elements`将会长期的使代码边的干净。
+
+Switching between css and xpath locate strategies is handled internally so you don't need to call useXpath and useCss in your tests. The default locateStrategy is css but you can also specify xpath:
+
+```js
+module.exports = {
+  elements: {
+    searchBar: { 
+      selector: 'input[type=text]' 
+    },
+    submit: { 
+      selector: '//[@name="q"]', 
+      locateStrategy: 'xpath' 
+    }
+  }
+};
+```
+Or if you're creating elements with the same locate strategy as is default, you can use the shorthand:
+
+```js
+module.exports = {
+  elements: {
+    searchBar: 'input[type=text]'
+  }
+};
+```
 
 
+
+
+
+
+        
 
 
   [1]: http://nightwatchjs.org/api/#expect
   [2]: https://github.com/mochajs/mocha/wiki/Using-mocha-programmatically#set-options
+  [3]: http://martinfowler.com/bliki/PageObject.html
