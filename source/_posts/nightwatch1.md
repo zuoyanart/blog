@@ -597,7 +597,7 @@ module.exports = {
 ```
 ### 定义dom 元素
 大多数时候， 你会定义`elements`在你的页面上然后在测试页面通过命令或者断言。
-这样使你的所有元素都在一个地方定义的元素属性变得简单。特别是在大型集成测试，使用`elements`将会长期的使代码边的干净。
+这样使你的所有元素都在一个地方定义的元素属性变得简单。特别是在大型集成测试，使用`elements`将会长期的使代码变的干净。
 
 Switching between css and xpath locate strategies is handled internally so you don't need to call useXpath and useCss in your tests. The default locateStrategy is css but you can also specify xpath:
 
@@ -624,9 +624,146 @@ module.exports = {
 };
 ```
 
+使用`elements`属性允许你查询`element`通过`@`前缀，当调用`element`命令和断言时，而不用选择器。
+Optionally, you can define an array of objects:
+```js
+var sharedElements = {
+  mailLink: 'a[href*="mail.google.com"]'
+};
 
+module.exports = {
+  elements: [
+    sharedElements,
+    { searchBar: 'input[type=text]' }
+  ]
+};
+```
 
+Putting elements and url together, say you have the following defined above saved as a google.js file:
+同时使用 `elements` 和`url`，有一个`google.js`的参考例子，
+```js
 
+module.exports = {
+  url: 'http://google.com',
+  elements: {
+    searchBar: { 
+      selector: 'input[type=text]' 
+    },
+    submit: { 
+      selector: '//[@name="q"]', 
+      locateStrategy: 'xpath' 
+    }
+  }
+};
+```
+在测试中使用方法如下：
+```js
+module.exports = {
+  'Test': function (client) {
+    var google = client.page.google();
+
+    google.navigate()
+      .assert.title('Google')
+      .assert.visible('@searchBar')
+      .setValue('@searchBar', 'nightwatch')
+      .click('@submit');
+
+    client.end();
+  }
+};
+```
+
+### 定义切片
+Sometimes it is useful to define sections of a page. Sections do 2 things:
+
+Provide a level of namespacing under the page
+Provide element-level nesting so that any element defined within a section is a descendant of its parent section in the DOM
+You can create sections using the sections property:
+有时需要在页面中定义切片： 切片只做两件事情：
+ > * 在页面下放提供一个命名空间
+ > * 提供元素级别的嵌套，这样任何一个节点都能被定义在切片内作为dom的子元素
+ 
+ 你可以使用`sections`属性创建切片。
+ 
+```js
+module.exports = {
+  sections: {
+    menu: {
+      selector: '#gb',
+      elements: {
+        mail: { 
+          selector: 'a[href="mail"]'
+        },
+        images: {
+          selector: 'a[href="imghp"]'
+        }
+      }
+    }
+  }
+};
+```
+然后这样来测试：
+```js
+module.exports = {
+  'Test': function (client) {
+    var google = client.page.google();
+    google.expect.section('@menu').to.be.visible;
+
+    var menuSection = google.section.menu;
+    menuSection.expect.element('@mail').to.be.visible;
+    menuSection.expect.element('@images').to.be.visible;
+
+    menuSection.click('@mail');
+
+    client.end();
+  }
+};
+```
+        Note that every command and assertion on a section (other than `expect` assertions) returns that section for chaining. If desired, you can nest sections under other sections for complex DOM structures.
+        
+### 添加自定义命令
+你可以通过`commands`属性在页面中添加命令，这是一个有用的方法来封装逻辑页面，
+Nightwatch will call the command on the context of the page or section. Client commands like pause are available via this.api. For chaining, each function should return the page object or section.
+
+In this case, a command is used to encapsulate logic for clicking the submit button:
+```js
+var googleCommands = {
+  submit: function() {
+    this.api.pause(1000);
+    return this.waitForElementVisible('@submitButton', 1000)
+      .click('@submitButton')
+      .waitForElementNotPresent('@submitButton');
+  }
+};
+
+module.exports = {
+  commands: [googleCommands],
+  elements: {
+    searchBar: {
+      selector: 'input[type=text]'
+    },
+    submitButton: {
+      selector: 'button[name=btnG]'
+    }
+  }
+};
+```
+这样测试是简单的，
+```js
+module.exports = {
+  'Test': function (client) {
+    var google = client.page.google();
+    google.setValue('@searchBar', 'nightwatch')
+      .submit();
+
+    client.end();
+  }
+};
+```
+
+## 扩展NightWatch
+
+## 使用NightWatch进行单元测试
 
 
         
