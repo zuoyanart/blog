@@ -1,6 +1,6 @@
 title: 翻译nightwatchjs guid
 date: 2016-05-04 14:32:19
-tags:
+tags: [集成测试，验收测试，自动化测试]
 ---
 
 ## 综述
